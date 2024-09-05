@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+aapiVersion: apps/v1
 kind: Deployment
 metadata:
   name: account-service
@@ -17,5 +17,8 @@ spec:
         image: ghcr.io/spencerjirehcebrian/quantum-cash-digital-wallet-account-service:latest
         ports:
         - containerPort: 8082
+        envFrom:
+        - secretRef:
+            name: springboot-env-secret
       imagePullSecrets:
       - name: github-registry

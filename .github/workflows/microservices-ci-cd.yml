@@ -41,17 +41,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Check if image exists
-      id: check-image
-      run: |
-        if docker manifest inspect ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }} > /dev/null 2>&1; then
-          echo "Image exists, skipping build"
-          echo "::set-output name=image_exists::true"
-        else
-          echo "Image does not exist, proceeding with build"
-          echo "::set-output name=image_exists::false"
-        fi
-    
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
@@ -71,6 +60,13 @@ jobs:
         service: [account-service, user-service]
     steps:
     - uses: actions/checkout@v2
+    
+    - name: Create Kubernetes Secret
+      run: |
+        kubectl create secret generic springboot-env-secret \
+          --from-literal=JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
+          --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          --dry-run=client -o yaml | kubectl apply -f -
     
     - name: Deploy to local Kubernetes
       run: |

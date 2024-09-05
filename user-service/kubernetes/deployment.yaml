@@ -17,5 +17,8 @@ spec:
         image: ghcr.io/spencerjirehcebrian/quantum-cash-digital-wallet-user-service:latest
         ports:
         - containerPort: 8081
+        envFrom:
+        - secretRef:
+            name: springboot-env-secret
       imagePullSecrets:
       - name: github-registry
