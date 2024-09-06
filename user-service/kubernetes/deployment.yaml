@@ -60,4 +60,4 @@ spec:
       volumes:
       - name: flyway-migrations
         configMap:
-          name: flyway-migrations
+          name: user-service-flyway-migrations
