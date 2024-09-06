@@ -73,6 +73,12 @@ jobs:
           --from-literal=postgres-password=${{ secrets.POSTGRES_PASSWORD }} \
           --dry-run=client -o yaml | kubectl apply -f -
 
+    - name: Deploy PostgreSQL
+      run: |
+        kubectl apply -f shared/kubernetes/postgres-pv.yaml
+        kubectl apply -f shared/kubernetes/postgres-deployment.yaml
+        kubectl apply -f shared/kubernetes/postgres-service.yaml
+
     - name: Create Flyway migrations ConfigMap
       run: |
         echo "Creating ConfigMap for ${{ matrix.service }}"
