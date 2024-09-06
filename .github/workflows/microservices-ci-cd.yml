@@ -73,18 +73,30 @@ jobs:
           --from-literal=postgres-password=${{ secrets.POSTGRES_PASSWORD }} \
           --dry-run=client -o yaml | kubectl apply -f -
 
-    - name: Deploy PostgreSQL
-      run: |
-        kubectl apply -f shared/kubernetes/postgres-pv.yaml
-        kubectl apply -f shared/kubernetes/postgres-deployment.yaml
-        kubectl apply -f shared/kubernetes/postgres-service.yaml
-
     - name: Create Flyway migrations ConfigMap
       run: |
-        kubectl create configmap flyway-migrations --from-file=${{ matrix.service }}/src/main/resources/db/migration/ -o yaml --dry-run=client | kubectl apply -f -
+        echo "Creating ConfigMap for ${{ matrix.service }}"
+        ls -R ${{ matrix.service }}/src/main/resources/db/migration/
+        kubectl create configmap ${{ matrix.service }}-flyway-migrations \
+          --from-file=${{ matrix.service }}/src/main/resources/db/migration/ \
+          -o yaml --dry-run=client | kubectl apply -f -
+        echo "ConfigMap created. Listing ConfigMaps:"
+        kubectl get configmaps
 
     - name: Deploy to local Kubernetes
       run: |
         kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml
         kubectl apply -f ${{ matrix.service }}/kubernetes/service.yaml
         kubectl set image deployment/${{ matrix.service }} ${{ matrix.service }}=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }}
+        echo "Deployment applied. Checking pod status:"
+        kubectl get pods
+        echo "Describing the deployment:"
+        kubectl describe deployment ${{ matrix.service }}
+
+    - name: Check for errors
+      if: failure()
+      run: |
+        echo "Deployment failed. Checking logs:"
+        kubectl logs deployment/${{ matrix.service }} --all-containers=true
+        echo "Describing pods:"
+        kubectl describe pods -l app=${{ matrix.service }}
