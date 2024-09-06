@@ -57,17 +57,32 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        service: [user-service]
+        service: [user-service, account-service]
     steps:
     - uses: actions/checkout@v2
     
-    - name: Create Kubernetes Secret
+    - name: Create Kubernetes Secrets
       run: |
         kubectl create secret generic springboot-env-secret \
           --from-literal=JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
           --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
           --dry-run=client -o yaml | kubectl apply -f -
-    
+        
+        kubectl create secret generic postgres-secret \
+          --from-literal=postgres-user=${{ secrets.POSTGRES_USER }} \
+          --from-literal=postgres-password=${{ secrets.POSTGRES_PASSWORD }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Deploy PostgreSQL
+      run: |
+        kubectl apply -f shared/kubernetes/postgres-pv.yaml
+        kubectl apply -f shared/kubernetes/postgres-deployment.yaml
+        kubectl apply -f shared/kubernetes/postgres-service.yaml
+
+    - name: Create Flyway migrations ConfigMap
+      run: |
+        kubectl create configmap flyway-migrations --from-file=${{ matrix.service }}/src/main/resources/db/migration/ -o yaml --dry-run=client | kubectl apply -f -
+
     - name: Deploy to local Kubernetes
       run: |
         kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml

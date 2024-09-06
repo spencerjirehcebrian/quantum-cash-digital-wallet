@@ -12,6 +12,28 @@ spec:
       labels:
         app: user-service
     spec:
+      initContainers:
+      - name: flyway-migration
+        image: flyway/flyway:7-alpine
+        command: ['flyway', 'migrate']
+        env:
+        - name: FLYWAY_URL
+          value: jdbc:postgresql://postgres-service:5432/quantumcashdb
+        - name: FLYWAY_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-user
+        - name: FLYWAY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        - name: FLYWAY_SCHEMAS
+          value: user_service
+        volumeMounts:
+        - name: flyway-migrations
+          mountPath: /flyway/sql
       containers:
       - name: user-service
         image: ghcr.io/spencerjirehcebrian/quantum-cash-digital-wallet-user-service:latest
@@ -20,5 +42,22 @@ spec:
         envFrom:
         - secretRef:
             name: springboot-env-secret
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgres-service:5432/quantumcashdb
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-user
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
       imagePullSecrets:
       - name: github-registry
+      volumes:
+      - name: flyway-migrations
+        configMap:
+          name: flyway-migrations

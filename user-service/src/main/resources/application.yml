@@ -38,10 +38,6 @@ spring:
         jwt:
           issuer-uri: your-issuer-uri
 
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
-
 payment_gateway:
   service:
     url: http://localhost:8085
