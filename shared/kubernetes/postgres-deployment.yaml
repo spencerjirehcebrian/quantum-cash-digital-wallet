@@ -32,7 +32,7 @@ spec:
               key: postgres-password
         volumeMounts:
         - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
+          mountPath: /mnt/wsl/data/postgres
           subPath: postgres
       volumes:
       - name: postgres-storage
