@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: user-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8081"
     spec:
       initContainers:
       - name: flyway-migration
@@ -34,6 +38,13 @@ spec:
         volumeMounts:
         - name: flyway-migrations
           mountPath: /flyway/sql
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
       containers:
       - name: user-service
         image: ghcr.io/spencerjirehcebrian/quantum-cash-digital-wallet-user-service:latest
@@ -55,6 +66,13 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: postgres-password
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
       imagePullSecrets:
       - name: github-registry
       volumes:

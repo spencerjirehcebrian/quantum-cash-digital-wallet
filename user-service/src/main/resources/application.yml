@@ -32,3 +32,11 @@ payment_gateway:
 notification:
   service:
     url: http://localhost:8086
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  prometheus:
+    enabled: true
