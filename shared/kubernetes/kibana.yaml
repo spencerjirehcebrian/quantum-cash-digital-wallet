@@ -1,0 +1,8 @@
+elasticsearchHosts: "https://elasticsearch-master:9200"
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: self-hosted.local
+      paths:
+        - path: /

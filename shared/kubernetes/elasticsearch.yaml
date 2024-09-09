@@ -1,0 +1,36 @@
+clusterHealthCheckParams: "wait_for_status=yellow&timeout=1m"
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 3
+  timeoutSeconds: 5
+resources:
+  requests:
+    cpu: "100m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+replicas: 1
+minimumMasterNodes: 1
+antiAffinity: "soft"
+esJavaOpts: "-Xmx512m -Xms512m"
+persistence:
+  enabled: false
+volumeClaimTemplate:
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests:
+      storage: 1Gi
+http:
+  enabled: true
+  port: 9200
+  tls:
+
+discovery.type: single-node
+esConfig:
+  elasticsearch.yml: |
+    xpack.security.enabled: true
+    xpack.security.transport.ssl.enabled: true
+    xpack.security.http.ssl.enabled: true

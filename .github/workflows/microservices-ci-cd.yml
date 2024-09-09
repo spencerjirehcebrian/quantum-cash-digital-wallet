@@ -63,6 +63,9 @@ jobs:
     
     - name: Create Kubernetes Secrets
       run: |
+
+        mkdir -p /mnt/wsl/data/postgres
+
         kubectl create secret generic springboot-env-secret \
           --from-literal=JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
           --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
