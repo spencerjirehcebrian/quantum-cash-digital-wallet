@@ -98,13 +98,19 @@ jobs:
 
     - name: Deploy to local Kubernetes
       run: |
-        kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml
-        kubectl apply -f ${{ matrix.service }}/kubernetes/service.yaml
-        kubectl set image deployment/${{ matrix.service }} ${{ matrix.service }}=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }}
+        kubectl create namespace quantum_cash --dry-run=client -o yaml | kubectl apply -f -
+        
+        kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml -n quantum_cash
+        kubectl apply -f ${{ matrix.service }}/kubernetes/service.yaml -n quantum_cash
+        
+        kubectl set image deployment/${{ matrix.service }} ${{ matrix.service }}=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }} -n quantum_cash
+        
         echo "Deployment applied. Checking pod status:"
-        kubectl get pods
+        kubectl get pods -n quantum_cash
+        
         echo "Describing the deployment:"
-        kubectl describe deployment ${{ matrix.service }}
+        kubectl describe deployment ${{ matrix.service }} -n quantum_cash
+
 
     - name: Check for errors
       if: failure()
