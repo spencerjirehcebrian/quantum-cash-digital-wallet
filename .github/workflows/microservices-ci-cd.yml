@@ -84,6 +84,7 @@ jobs:
 
     - name: Deploy PostgreSQL
       run: |
+        kubectl apply -f shared/kubernetes/manual-storageclass.yaml -n quantum-cash
         kubectl apply -f shared/kubernetes/postgres-pv.yaml -n quantum-cash
         kubectl apply -f shared/kubernetes/postgres-deployment.yaml -n quantum-cash
         kubectl apply -f shared/kubernetes/postgres-service.yaml -n quantum-cash
