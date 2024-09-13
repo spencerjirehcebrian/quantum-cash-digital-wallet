@@ -76,6 +76,10 @@ jobs:
           --from-literal=postgres-password=${{ secrets.POSTGRES_PASSWORD }} \
           --dry-run=client -o yaml | kubectl apply -f -
 
+    - name: Apply filebeat configmap
+      run: |
+        kubectl apply -f shared/kubernetes/filebeat-configmap.yaml
+
     - name: Deploy PostgreSQL
       run: |
         kubectl apply -f shared/kubernetes/postgres-pv.yaml

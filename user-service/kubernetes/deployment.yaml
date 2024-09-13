@@ -73,9 +73,35 @@ spec:
           limits:
             cpu: 500m
             memory: 1Gi
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:7.15.0
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+        - name: filebeat-config
+          mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
       imagePullSecrets:
       - name: github-registry
       volumes:
       - name: flyway-migrations
         configMap:
           name: user-service-flyway-migrations
+      - name: log-volume
+        emptyDir: {}
+      - name: filebeat-config
+        configMap:
+          name: filebeat-config
+          items:
+            - key: filebeat.yml
+              path: filebeat.yml

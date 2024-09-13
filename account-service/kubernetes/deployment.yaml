@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: account-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8082"
     spec:
       initContainers:
       - name: flyway-migration
@@ -34,6 +38,13 @@ spec:
         volumeMounts:
         - name: flyway-migrations
           mountPath: /flyway/sql
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
       containers:
       - name: account-service
         image: ghcr.io/spencerjirehcebrian/quantum-cash-digital-wallet-account-service:latest
@@ -55,9 +66,42 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: postgres-password
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:7.15.0
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+        - name: filebeat-config
+          mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
       imagePullSecrets:
       - name: github-registry
       volumes:
       - name: flyway-migrations
         configMap:
           name: account-service-flyway-migrations
+      - name: log-volume
+        emptyDir: {}
+      - name: filebeat-config
+        configMap:
+          name: filebeat-config
+          items:
+            - key: filebeat.yml
+              path: filebeat.yml
