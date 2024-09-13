@@ -60,31 +60,33 @@ jobs:
         service: [user-service, account-service]
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Create Kubernetes Secrets
       run: |
-
         mkdir -p /mnt/wsl/data/postgres
+
+        # Create secrets in the quantum-cash namespace
+        kubectl create namespace quantum-cash --dry-run=client -o yaml | kubectl apply -f -
 
         kubectl create secret generic springboot-env-secret \
           --from-literal=JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
           --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
-          --dry-run=client -o yaml | kubectl apply -f -
-        
+          --dry-run=client -o yaml | kubectl apply -f - -n quantum-cash
+
         kubectl create secret generic postgres-secret \
           --from-literal=postgres-user=${{ secrets.POSTGRES_USER }} \
           --from-literal=postgres-password=${{ secrets.POSTGRES_PASSWORD }} \
-          --dry-run=client -o yaml | kubectl apply -f -
+          --dry-run=client -o yaml | kubectl apply -f - -n quantum-cash
 
     - name: Apply filebeat configmap
       run: |
-        kubectl apply -f shared/kubernetes/filebeat-configmap.yaml
+        kubectl apply -f shared/kubernetes/filebeat-configmap.yaml -n quantum-cash
 
     - name: Deploy PostgreSQL
       run: |
-        kubectl apply -f shared/kubernetes/postgres-pv.yaml
-        kubectl apply -f shared/kubernetes/postgres-deployment.yaml
-        kubectl apply -f shared/kubernetes/postgres-service.yaml
+        kubectl apply -f shared/kubernetes/postgres-pv.yaml -n quantum-cash
+        kubectl apply -f shared/kubernetes/postgres-deployment.yaml -n quantum-cash
+        kubectl apply -f shared/kubernetes/postgres-service.yaml -n quantum-cash
 
     - name: Create Flyway migrations ConfigMap
       run: |
@@ -92,30 +94,34 @@ jobs:
         ls -R ${{ matrix.service }}/src/main/resources/db/migration/
         kubectl create configmap ${{ matrix.service }}-flyway-migrations \
           --from-file=${{ matrix.service }}/src/main/resources/db/migration/ \
-          -o yaml --dry-run=client | kubectl apply -f -
+          -o yaml --dry-run=client | kubectl apply -f - -n quantum-cash
         echo "ConfigMap created. Listing ConfigMaps:"
-        kubectl get configmaps
+        kubectl get configmaps -n quantum-cash
 
     - name: Deploy to local Kubernetes
       run: |
-        kubectl create namespace quantum_cash --dry-run=client -o yaml | kubectl apply -f -
+        # Ensure namespace exists
+        kubectl create namespace quantum-cash --dry-run=client -o yaml | kubectl apply -f -
         
-        kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml -n quantum_cash
-        kubectl apply -f ${{ matrix.service }}/kubernetes/service.yaml -n quantum_cash
+        # Apply the service and deployment YAML in the quantum-cash namespace
+        kubectl apply -f ${{ matrix.service }}/kubernetes/deployment.yaml -n quantum-cash
+        kubectl apply -f ${{ matrix.service }}/kubernetes/service.yaml -n quantum-cash
         
-        kubectl set image deployment/${{ matrix.service }} ${{ matrix.service }}=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }} -n quantum_cash
+        # Update the deployment with the new image in the quantum-cash namespace
+        kubectl set image deployment/${{ matrix.service }} ${{ matrix.service }}=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}-${{ matrix.service }}:${{ github.sha }} -n quantum-cash
         
+        # Check pod status
         echo "Deployment applied. Checking pod status:"
-        kubectl get pods -n quantum_cash
+        kubectl get pods -n quantum-cash
         
+        # Describe the deployment in the quantum-cash namespace
         echo "Describing the deployment:"
-        kubectl describe deployment ${{ matrix.service }} -n quantum_cash
-
+        kubectl describe deployment ${{ matrix.service }} -n quantum-cash
 
     - name: Check for errors
       if: failure()
       run: |
         echo "Deployment failed. Checking logs:"
-        kubectl logs deployment/${{ matrix.service }} --all-containers=true
+        kubectl logs deployment/${{ matrix.service }} --all-containers=true -n quantum-cash
         echo "Describing pods:"
-        kubectl describe pods -l app=${{ matrix.service }}
+        kubectl describe pods -l app=${{ matrix.service }} -n quantum-cash
